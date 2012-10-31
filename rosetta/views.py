@@ -7,6 +7,7 @@ from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.utils.encoding import smart_unicode, iri_to_uri
 from django.utils.translation import ugettext_lazy as _
+from django.utils import importlib
 from django.views.decorators.cache import never_cache
 from rosetta.conf import settings as rosetta_settings
 from rosetta.polib import pofile
@@ -60,7 +61,7 @@ def home(request):
                 entry.md5hash = hashlib.md5(
                     entry.msgid.encode("utf8") +
                     entry.msgstr.encode("utf8") +
-                    (entry.msgctxt and entry.msgctxt.encode("utf8") or "") 
+                    (entry.msgctxt and entry.msgctxt.encode("utf8") or "")
                 ).hexdigest()
 
         else:
@@ -247,7 +248,7 @@ def home(request):
     else:
         return list_languages(request, do_session_warn=True)
 home = never_cache(home)
-home = user_passes_test(lambda user: can_translate(user), settings.LOGIN_URL)(home)
+home = user_passes_test(lambda user: get_permission_check_function()(user), settings.LOGIN_URL)(home)
 
 
 def download_file(request):
@@ -285,7 +286,7 @@ def download_file(request):
     except Exception:
         return HttpResponseRedirect(reverse('rosetta-home'))
 download_file = never_cache(download_file)
-download_file = user_passes_test(lambda user: can_translate(user), settings.LOGIN_URL)(download_file)
+download_file = user_passes_test(lambda user: get_permission_check_function()(user), settings.LOGIN_URL)(download_file)
 
 
 def list_languages(request, do_session_warn=False):
@@ -327,7 +328,7 @@ def list_languages(request, do_session_warn=False):
     do_session_warn = do_session_warn and 'SessionRosettaStorage' in rosetta_settings.STORAGE_CLASS and 'signed_cookies' in settings.SESSION_ENGINE
     return render_to_response('rosetta/languages.html', locals(), context_instance=RequestContext(request))
 list_languages = never_cache(list_languages)
-list_languages = user_passes_test(lambda user: can_translate(user), settings.LOGIN_URL)(list_languages)
+list_languages = user_passes_test(lambda user: get_permission_check_function()(user), settings.LOGIN_URL)(list_languages)
 
 
 def get_app_name(path):
@@ -371,7 +372,14 @@ def lang_sel(request, langid, idx):
 
         return HttpResponseRedirect(reverse('rosetta-home'))
 lang_sel = never_cache(lang_sel)
-lang_sel = user_passes_test(lambda user: can_translate(user), settings.LOGIN_URL)(lang_sel)
+lang_sel = user_passes_test(lambda user: get_permission_check_function()(user), settings.LOGIN_URL)(lang_sel)
+
+
+def get_permission_check_function():
+    from rosetta.conf import settings
+    perm_module, perm_func = settings.CHECK_PERMISSIONS_FUNCTION.rsplit('.', 1)
+    perm_module = importlib.import_module(perm_module)
+    return getattr(perm_module, perm_func)
 
 
 def can_translate(user):

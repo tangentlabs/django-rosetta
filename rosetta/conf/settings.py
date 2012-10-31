@@ -16,6 +16,8 @@ MAIN_LANGUAGE = getattr(settings, 'ROSETTA_MAIN_LANGUAGE', None)
 MESSAGES_SOURCE_LANGUAGE_CODE = getattr(settings, 'ROSETTA_MESSAGES_SOURCE_LANGUAGE_CODE', 'en')
 MESSAGES_SOURCE_LANGUAGE_NAME = getattr(settings, 'ROSETTA_MESSAGES_SOURCE_LANGUAGE_NAME', 'English')
 
+CHECK_PERMISSIONS_FUNCTION = getattr(settings, 'ROSETTA_CHECK_PERMISSIONS_FUNCTION', 'rosetta.views.can_translate')
+
 
 """
 When running WSGI daemon mode, using mod_wsgi 2.0c5 or later, this setting
